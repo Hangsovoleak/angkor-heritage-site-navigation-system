@@ -5,10 +5,6 @@ class Node:
         self.left = left
         self.right = right
 
-    def __repr__(self):
-        return f"Node({self.name}, {self.distance})"
-
-
 # --- Level 0 (Root) ---
 root = Node("Angkor Wat", "0 km")
 
