@@ -1,119 +1,108 @@
 """
-temple_data.py
-Predefined data for 15 temples in the Angkor Archaeological Park (Cambodia),
-plus the distances between them.
+Angkor Heritage Site Navigation System
+---------------------------------------
+Shared temple data.
 
-Note: distances are approximate, illustrative road distances for this
-project's demo dataset, not surveyed GPS measurements.
+Every module (hash table, tree, graph) references the SAME 15 temples and
+the SAME numeric IDs (1-15), matching the legend used in the project's
+graph diagram. Keeping one source of truth avoids ID mismatches between
+the hash table, tree, and graph.
 """
 
-from models import Temple
-from hash_table import HashTable
-from tree import CategoryTree
-from graph import Graph
 
-TEMPLES = [
-    Temple("Angkor Wat", "State temple",
-           "The largest religious monument in the world, built as a Hindu temple "
-           "and later transformed into a Buddhist site.",
-           "12th century", "South of Angkor Thom"),
-    Temple("Bayon", "State temple",
-           "Known for its many serene, giant stone faces carved into its towers.",
-           "Late 12th - early 13th century", "Center of Angkor Thom"),
-    Temple("Baphuon", "State temple",
-           "A three-tiered temple mountain with a giant reclining Buddha built "
-           "into its western side.",
-           "11th century", "Inside Angkor Thom, near the Royal Palace"),
-    Temple("Phnom Bakheng", "State temple",
-           "A hilltop temple popular for sunset views over Angkor Wat.",
-           "9th - 10th century", "Small hill between Angkor Wat and Angkor Thom"),
-    Temple("Pre Rup", "State temple",
-           "A temple mountain of brick, laterite, and sandstone, used for "
-           "royal cremation rituals.",
-           "10th century", "East of the East Baray"),
-    Temple("East Mebon", "State temple",
-           "A temple mountain originally built on an artificial island in the "
-           "now-dry East Baray reservoir.",
-           "10th century", "Near Pre Rup"),
-    Temple("Ta Keo", "State temple",
-           "An unfinished temple mountain known for its stark, undecorated "
-           "sandstone blocks.",
-           "Late 10th - early 11th century", "Near Ta Prohm"),
-    Temple("Ta Prohm", "Monastery",
-           "Famous for large trees growing through its ruins; kept largely "
-           "in its 'as found' state.",
-           "Late 12th - early 13th century", "East of Angkor Thom"),
-    Temple("Preah Khan", "Monastery",
-           "A large monastic and teaching complex with long processional "
-           "causeways.",
-           "12th century", "North of Angkor Thom"),
-    Temple("Banteay Kdei", "Monastery",
-           "A quiet Buddhist monastic complex with a labyrinth-like layout.",
-           "12th century", "East of Ta Prohm"),
-    Temple("Banteay Srei", "Monastery",
-           "A small, intricately carved temple known for detailed pink "
-           "sandstone reliefs.",
-           "10th century", "Northeast of the main Angkor complex"),
-    Temple("Neak Pean", "Water temple",
-           "A small island temple set in a square pool, historically used "
-           "for ritual purification.",
-           "Late 12th century", "Near Preah Khan"),
-    Temple("Srah Srang", "Water temple",
-           "A royal bathing pool with a sandstone landing platform.",
-           "10th century (rebuilt 12th)", "East of Banteay Kdei"),
-    Temple("Terrace of the Elephants", "Royal structure",
-           "A long public viewing terrace decorated with carved elephants, "
-           "used by the king to view public ceremonies.",
-           "Late 12th century", "Inside Angkor Thom"),
-    Temple("Beng Mealea", "Royal structure",
-           "A large, largely unrestored temple complex surrounded by jungle, "
-           "similar in layout to Angkor Wat.",
-           "12th century", "Roughly 40 km east of the main Angkor complex"),
-]
+class Temple:
+    """Represents a single temple (the data stored/looked-up in the system)."""
 
-# (temple_a, temple_b, distance_km) - approximate, for demo purposes
-DISTANCES = [
-    ("Angkor Wat", "Bayon", 3.0),
-    ("Angkor Wat", "Phnom Bakheng", 2.0),
-    ("Bayon", "Baphuon", 0.5),
-    ("Baphuon", "Terrace of the Elephants", 0.3),
-    ("Bayon", "Terrace of the Elephants", 0.6),
-    ("Terrace of the Elephants", "Ta Keo", 1.0),
-    ("Ta Keo", "Ta Prohm", 2.5),
-    ("Ta Prohm", "Banteay Kdei", 1.5),
-    ("Banteay Kdei", "Srah Srang", 0.5),
-    ("Srah Srang", "Pre Rup", 3.0),
-    ("Pre Rup", "East Mebon", 2.0),
-    ("East Mebon", "Neak Pean", 4.0),
-    ("Neak Pean", "Preah Khan", 2.5),
-    ("Preah Khan", "Angkor Wat", 5.0),
-    ("Bayon", "Preah Khan", 3.0),
-    ("Angkor Wat", "Banteay Srei", 25.0),
-    ("Banteay Srei", "Preah Khan", 20.0),
-    ("Banteay Srei", "Beng Mealea", 40.0),
-    ("Beng Mealea", "Preah Khan", 45.0),
-    ("Ta Keo", "Beng Mealea", 42.0),
+    def __init__(self, temple_id, name, category, distance_from_angkor_wat):
+        self.temple_id = temple_id
+        self.name = name
+        self.category = category
+        self.distance_from_angkor_wat = distance_from_angkor_wat
+
+    def __repr__(self):
+        return (f"[ID:{self.temple_id}] {self.name} "
+                f"({self.category}, {self.distance_from_angkor_wat} km from Angkor Wat)")
+
+
+# ID -> Temple, matching the numbering used in the graph diagram legend
+TEMPLES = {
+    1: Temple(1, "Angkor Wat", "Main Temple", 0.0),
+    2: Temple(2, "Bayon Temple", "Main Temple", 3.5),
+    3: Temple(3, "Ta Prohm Temple", "Jungle Temple", 7.0),
+    4: Temple(4, "Preah Khan Temple", "Historic Temple", 8.5),
+    5: Temple(5, "Banteay Srei", "Outlying Temple", 32.0),
+    6: Temple(6, "Phnom Bakheng Temple", "Hilltop Temple", 1.3),
+    7: Temple(7, "Baphuon Temple", "Historic Temple", 4.0),
+    8: Temple(8, "Pre Rup Temple", "Outlying Temple", 13.0),
+    9: Temple(9, "Banteay Kdei Temple", "Historic Temple", 7.5),
+    10: Temple(10, "Ta Som", "Outlying Temple", 14.0),
+    11: Temple(11, "Neak Poan Temple", "Outlying Temple", 11.5),
+    12: Temple(12, "Eastern Mebon Temple", "Outlying Temple", 14.5),
+    13: Temple(13, "Ta Keo Temple", "Historic Temple", 6.5),
+    14: Temple(14, "Prasat Chau Say Tevoda", "Historic Temple", 6.0),
+    15: Temple(15, "Thommanon Temple", "Historic Temple", 6.0),
+}
+
+# Undirected weighted edges (temple_id, temple_id, distance_km), taken from
+# the project's graph diagram.
+EDGES = [
+    (4, 11, 2.2),
+    (11, 10, 3.0),
+    (4, 14, 2.5),
+    (14, 11, 5.1),
+    (4, 2, 3.1),
+    (14, 15, 0.15),
+    (2, 15, 1.2),
+    (2, 6, 1.8),
+    (2, 1, 1.6),
+    (6, 1, 1.5),
+    (15, 13, 1.0),
+    (13, 3, 0.9),
+    (13, 12, 5.8),
+    (10, 12, 6.5),
+    (10, 5, 15.8),
+    (12, 8, 1.5),
+    (8, 5, 19.5),
+    (3, 9, 1.0),
+    (3, 1, 2.8),
+    (9, 8, 2.0),
+    (9, 7, 2.3),
+    (1, 7, 2.9),
 ]
 
 
-def build_hash_table():
-    table = HashTable()
-    for temple in TEMPLES:
-        table.insert(temple.name, temple)
-    return table
+# Common nicknames / shorthand / misspellings -> the temple's official name.
+# Lets the Hash Table forgive casual input like "angkor" or "ta prohm" (Tomb
+# Raider temple) instead of requiring the exact full name.
+ALIASES = {
+    "angkor": "Angkor Wat",
+    "angkor wat temple": "Angkor Wat",
+    "bayon": "Bayon Temple",
+    "ta prohm": "Ta Prohm Temple",
+    "tomb raider temple": "Ta Prohm Temple",
+    "preah khan": "Preah Khan Temple",
+    "banteay srei temple": "Banteay Srei",
+    "phnom bakheng": "Phnom Bakheng Temple",
+    "bakheng": "Phnom Bakheng Temple",
+    "baphuon": "Baphuon Temple",
+    "pre rup": "Pre Rup Temple",
+    "banteay kdei": "Banteay Kdei Temple",
+    "ta som temple": "Ta Som",
+    "neak poan": "Neak Poan Temple",
+    "eastern mebon": "Eastern Mebon Temple",
+    "east mebon": "Eastern Mebon Temple",
+    "ta keo": "Ta Keo Temple",
+    "chau say tevoda": "Prasat Chau Say Tevoda",
+    "chau say": "Prasat Chau Say Tevoda",
+    "thommanon": "Thommanon Temple",
+    "ta prohrn": "Ta Prohm Temple",  # typo seen in the original doc
+}
 
 
-def build_category_tree():
-    tree = CategoryTree()
-    for temple in TEMPLES:
-        tree.add_temple_to_category(temple.category, temple.name)
-    return tree
-
-
-def build_graph():
-    graph = Graph()
-    for temple in TEMPLES:
-        graph.add_temple(temple.name)
-    for temple_a, temple_b, distance in DISTANCES:
-        graph.add_edge(temple_a, temple_b, distance)
-    return graph
+def name_to_id(name):
+    """Look up a temple's ID from its name (case-insensitive)."""
+    name_norm = name.strip().lower()
+    for temple_id, temple in TEMPLES.items():
+        if temple.name.lower() == name_norm:
+            return temple_id
+    return None

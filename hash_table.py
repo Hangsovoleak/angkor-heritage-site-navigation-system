@@ -8,6 +8,10 @@ Extras on top of the core chaining table:
       input still finds the right entry
     - Popularity tracking: counts how many times each key has been
       looked up via get(), with a top_n() helper to rank them
+    - ID lookup: users can search by a temple's numeric ID (e.g. "3")
+      as well as by name - get() accepts either
+    - display(): shows bucket index, key (name), and ID together so
+      users can see how to search either way
 """
 
 from temple_data import ALIASES
@@ -20,6 +24,7 @@ class HashTable:
         self.count = 0
         self.aliases = {k.strip().lower(): v for k, v in ALIASES.items()}  # nickname -> official key
         self.popularity = {}  # normalized key -> lookup count
+        self.id_index = {}    # temple_id (str) -> normalized name key, for ID-based search
 
     def _hash(self, key):
         key = key.strip().lower()
@@ -45,11 +50,22 @@ class HashTable:
         bucket.append((norm_key, value))
         self.count += 1
 
+        # If the value carries a temple_id, register it so users can
+        # also search by ID (e.g. "3") instead of typing the full name
+        temple_id = getattr(value, "temple_id", None)
+        if temple_id is not None:
+            self.id_index[str(temple_id)] = norm_key
+
         # Resize if the average chain length gets too long, to keep lookups near O(1)
         if self.count / self.size > 1.5:
             self._resize()
 
     def get(self, key, track_popularity=True):
+        # Allow searching by numeric ID (e.g. "3" or 3) in addition to name
+        key_str = str(key).strip()
+        if key_str in self.id_index:
+            key = self.id_index[key_str]
+
         key = self._resolve_alias(key)
         index = self._hash(key)
         bucket = self.buckets[index]
@@ -77,6 +93,23 @@ class HashTable:
         return [key for bucket in self.buckets for key, _ in bucket]
 
     # ------------------------------------------------------------------
+    # Display
+    # ------------------------------------------------------------------
+    def display(self):
+        """
+        Print every stored entry showing bucket index, key (name), and
+        ID together - so users can see they're free to search by either
+        the temple's name or its numeric ID.
+        """
+        print(f"{'Bucket':<8}{'ID':<5}{'Name (search key)':<26}{'Details'}")
+        print("-" * 80)
+        for index, bucket in enumerate(self.buckets):
+            for key, value in bucket:
+                temple_id = getattr(value, "temple_id", "-")
+                name = getattr(value, "name", key)
+                print(f"{index:<8}{temple_id:<5}{name:<26}{value}")
+
+    # ------------------------------------------------------------------
     # Popularity tracking
     # ------------------------------------------------------------------
     def _record_lookup(self, norm_key):
@@ -100,6 +133,59 @@ class HashTable:
                 results.append((norm_key, value, count))
         return results
 
+    # ------------------------------------------------------------------
+    # Summary / performance stats
+    # ------------------------------------------------------------------
+    def summary(self):
+        """
+        Return a dict of stats describing the table's current state -
+        useful for demonstrating hash table performance (load factor,
+        collision spread, etc.) in a presentation.
+        """
+        chain_lengths = [len(bucket) for bucket in self.buckets]
+        used_buckets = [length for length in chain_lengths if length > 0]
+        collided_buckets = [length for length in chain_lengths if length > 1]
+
+        total_lookups = sum(self.popularity.values())
+        most_searched = self.top_n(1)
+
+        return {
+            "size": self.size,                                  # number of buckets
+            "count": self.count,                                # number of stored entries
+            "load_factor": round(self.count / self.size, 3),
+            "empty_buckets": chain_lengths.count(0),
+            "used_buckets": len(used_buckets),
+            "buckets_with_collisions": len(collided_buckets),
+            "longest_chain": max(chain_lengths) if chain_lengths else 0,
+            "average_chain_length_used": (
+                round(sum(used_buckets) / len(used_buckets), 2) if used_buckets else 0
+            ),
+            "total_lookups_recorded": total_lookups,
+            "most_searched": most_searched[0] if most_searched else None,  # (key, value, count)
+        }
+
+    def print_summary(self):
+        """Pretty-print the summary() stats to the terminal."""
+        stats = self.summary()
+
+        print("=== Hash Table Summary ===")
+        print(f"Buckets (table size):     {stats['size']}")
+        print(f"Entries stored:           {stats['count']}")
+        print(f"Load factor:              {stats['load_factor']}")
+        print(f"Empty buckets:            {stats['empty_buckets']}")
+        print(f"Used buckets:             {stats['used_buckets']}")
+        print(f"Buckets with collisions:  {stats['buckets_with_collisions']}")
+        print(f"Longest chain:            {stats['longest_chain']}")
+        print(f"Avg chain length (used):  {stats['average_chain_length_used']}")
+        print(f"Total lookups recorded:   {stats['total_lookups_recorded']}")
+
+        if stats["most_searched"]:
+            _, value, count = stats["most_searched"]
+            name = getattr(value, "name", value)
+            print(f"Most searched entry:      {name} ({count} lookup(s))")
+        else:
+            print("Most searched entry:      (no lookups recorded yet)")
+
 
 def build_temple_hash_table():
     """Builds and returns a HashTable pre-loaded with all 15 temples."""
@@ -113,7 +199,14 @@ def build_temple_hash_table():
 if __name__ == "__main__":
     hash_table = build_temple_hash_table()
 
-    print("=== Alias Lookup Demo ===")
+    print("=== Table Display (name + ID together) ===")
+    hash_table.display()
+
+    print("\n=== Search by Name vs Search by ID ===")
+    print(f"Search by name 'Bayon Temple' -> {hash_table.get('Bayon Temple')}")
+    print(f"Search by ID   '2'            -> {hash_table.get('2')}")
+
+    print("\n=== Alias Lookup Demo ===")
     for nickname in ["angkor", "ta prohm", "bakheng", "chau say"]:
         result = hash_table.get(nickname)
         print(f"Search '{nickname}' -> {result}")
@@ -127,3 +220,6 @@ if __name__ == "__main__":
 
     for norm_key, temple, count in hash_table.top_n(3):
         print(f"{temple.name}: searched {count} time(s)")
+
+    print("\n" + "=" * 30)
+    hash_table.print_summary()
