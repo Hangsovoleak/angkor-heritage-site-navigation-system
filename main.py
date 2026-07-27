@@ -35,13 +35,14 @@ def show_temple_list():
 
 
 def find_temple(directory, recommendations):
+    show_temple_list()
     query = input("\nWhich temple are you looking for? (name or number): ").strip()
     temple = directory.get(query)
 
     print_divider()
     if temple is None:
         print(f"Sorry, no temple matches '{query}'. Try the name or its number "
-              "from the temple list (option 4).")
+              "from the temple list.")
         print_divider()
         return
 
@@ -74,6 +75,7 @@ def offer_nearby_temples(directory, nearby_names):
 
 
 def plan_route(directory, route_planner):
+    show_temple_list()
     start_query = input("\nWhere are you now? (temple name or number): ").strip()
     end_query = input("Where do you want to go? (temple name or number): ").strip()
 
